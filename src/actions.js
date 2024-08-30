@@ -209,28 +209,6 @@ module.exports.initActions = function () {
 			callback: async function (action) {
 				self.executeAction(action);
 			},
-		},
-
-		'0x51': {
-			name: 'Set Connection of CON Devices to CPU Devices',
-			options: [{
-				type: 'textinput',
-				label: 'CON',
-				id: 'con',
-				default: '',
-				tooltip: 'Enter CON Number',
-				regex: Regex.NUMBER
-			},{
-				type: 'textinput',
-				label: 'CPU',
-				id: 'cpu',
-				default: '',
-				tooltip: 'Enter CPU Number',
-				regex: Regex.NUMBER
-			}],
-			callback: async function (action) {
-				self.executeAction(action);
-			}
 		}				
 	}
 
@@ -292,13 +270,6 @@ module.exports.executeAction = function (action) {
 			cmd.writeUInt16LE(parseInt(opt.con), 5);
 			cmd.writeUInt16LE(parseInt(opt.link), 7);
 			self.log('debug', 'CMD switch-link:  ' + cmd.toString('hex'));
-		break;
-
-		case '0x51':
-			var cmd = Buffer.from([0x1B, 0x5B, 0x51, 0x0B, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00]);
-			cmd.writeUInt16LE(parseInt(opt.cpu), 7);
-			cmd.writeUInt16LE(parseInt(opt.con), 9);
-			self.log('debug', 'CMD 0x51:  ' + cmd.toString('hex'));
 		break;
 
 		case 'send-message':
