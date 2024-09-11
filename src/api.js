@@ -1,4 +1,4 @@
-const { TCPHelper, InstanceStatus } = require('@companion-module/base')
+const { TCPHelper, InstanceStatus } = require('@companion-module/base');
 
 module.exports.initAPI = function () {
 	var self = this;
@@ -44,6 +44,7 @@ module.exports.initAPI = function () {
 		self.log('info', 'startListeningSocket... ');
 		self.log('info', 'Try socket connection to host ' + hosts[index]);
 
+		self.listenToEcho = true;
 		
 		self.socket = new TCPHelper(hosts[index], self.config.port, {rejectUnauthorized: false});
 
@@ -99,6 +100,32 @@ module.exports.initAPI = function () {
 			if(data.length) {
 				console.log('LAN ECHO');
 				console.log(data);
+				if(self.listenToEcho) {
+					// Login user command.
+					if(data[2] == 0x65) {
+						// Stop listening for matrix echoes until this prcedure is finished.
+						self.listenToEcho = false;
+
+						var cons = self.config.ibc_con_ids.split(',');
+						var userid = data.readInt16LE(7);
+						//console.log(userid);
+
+						// Login user at all defined CONs.
+						cons.forEach(conid => {
+							//console.log(conid);
+							var cmd = Buffer.from([0x1B, 0x5B, 0x65, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00]);
+							cmd.writeUInt16LE(parseInt(conid), 5);
+							cmd.writeUInt16LE(parseInt(userid), 7);
+							self.socket.send(cmd);
+						});
+
+						// Re-start listening for matrix echoes again.
+						setTimeout(startListeningToEcho, 500);
+
+						// Update button text by companion API call.
+						self.callApi(userid);
+					}
+				}
 			}
 		});
 	}
@@ -108,4 +135,13 @@ module.exports.initAPI = function () {
 
 	// Run establishing connection immediately once.
 	retrySocket();
+
+
+	/**
+	 * Re-activate listening to echos.
+	 */
+	const startListeningToEcho = () => {
+		self.listenToEcho = true;
+	}
+
 }

@@ -38,6 +38,28 @@ $\
 				default: '5555',
 				regex: Regex.PORT
 			},
+
+			{
+				type: 'textinput',
+				id: 'ibc_con_ids',
+				label: 'IBC 2024 CON ID(s) (comma separated)',
+				width: 12,
+				default: '',
+				regex: 
+// Don't change these lines.
+// No ident is allowed here.
+// We splitted the regular expression over several lines to make it easier to understand.
+"\
+/\
+^\
+(\
+(([0-9]){1,4})\
+,)*\
+(([0-9]){1,4})\
+$\
+/"
+			},
+
 		]
 	},
 }
