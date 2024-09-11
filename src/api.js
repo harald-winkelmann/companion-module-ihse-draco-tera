@@ -3,6 +3,8 @@ const { TCPHelper, InstanceStatus } = require('@companion-module/base');
 module.exports.initAPI = function () {
 	var self = this;
 
+	var cons = self.config.ibc_con_ids.split(',');
+
 	if(self.KEEPALIVE) {
 		clearInterval(self.KEEPALIVE);
 		delete self.KEEPALIVE;
@@ -103,27 +105,32 @@ module.exports.initAPI = function () {
 				if(self.listenToEcho) {
 					// Login user command.
 					if(data[2] == 0x65) {
-						// Stop listening for matrix echoes until this prcedure is finished.
-						self.listenToEcho = false;
 
-						var cons = self.config.ibc_con_ids.split(',');
 						var userid = data.readInt16LE(7);
 						//console.log(userid);
 
-						// Login user at all defined CONs.
-						cons.forEach(conid => {
-							//console.log(conid);
-							var cmd = Buffer.from([0x1B, 0x5B, 0x65, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00]);
-							cmd.writeUInt16LE(parseInt(conid), 5);
-							cmd.writeUInt16LE(parseInt(userid), 7);
-							self.socket.send(cmd);
-						});
+						var conid = data.readInt16LE(5);
+						//console.log(conid);
 
-						// Re-start listening for matrix echoes again.
-						setTimeout(startListeningToEcho, 500);
+						if(cons.includes('' + conid)) {
+							// Stop listening for matrix echoes until this prcedure is finished.
+							self.listenToEcho = false;
 
-						// Update button text by companion API call.
-						self.callApi(userid);
+							// Login user at all defined CONs.
+							cons.forEach(conid => {
+								//console.log(conid);
+								var cmd = Buffer.from([0x1B, 0x5B, 0x65, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00]);
+								cmd.writeUInt16LE(parseInt(conid), 5);
+								cmd.writeUInt16LE(parseInt(userid), 7);
+								self.socket.send(cmd);
+							});
+
+							// Re-start listening for matrix echoes again.
+							setTimeout(startListeningToEcho, 500);
+
+							// Update button text by companion API call.
+							self.callApi(userid);
+						}
 					}
 				}
 			}
