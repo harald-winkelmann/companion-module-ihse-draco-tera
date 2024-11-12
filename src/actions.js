@@ -314,7 +314,7 @@ module.exports.executeAction = function (action) {
 
 				if (self.socket !== undefined) {
 					// Send command without message.
-					self.log('debug', 'sending ' + cmd.toString('hex'))
+					console.log(cmd);
 					self.socket.send(cmd);
 
 					// Send message and trailing null byte.
@@ -333,7 +333,7 @@ module.exports.executeAction = function (action) {
 
     if (cmd !== undefined) {
         if (self.socket !== undefined) {
-            self.log('debug', 'sending ' + cmd.toString('hex'))
+			console.log(new Date().toISOString(), 'CMD'.padEnd(self.console_ident), cmd);
             self.socket.send(cmd)
         }
     }

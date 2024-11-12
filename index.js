@@ -10,6 +10,9 @@ const configFields = require('./src/config.js')
  * Companion instance class for draco tera
  */
 class dracotera extends InstanceBase {
+	// Identation for some console outputs.
+	console_ident = 5;
+
 	constructor(internal) {
 		super(internal)
 		Object.assign(this, {
