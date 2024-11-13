@@ -3,7 +3,10 @@ const { TCPHelper, InstanceStatus } = require('@companion-module/base');
 module.exports.initAPI = function () {
 	var self = this;
 
-	var cons = self.config.ibc_con_ids.split(',');
+	var cons = [];
+	if (self.config.ibc_con_ids) {
+		cons = self.config.ibc_con_ids.split(',');
+	}
 
 	if(self.KEEPALIVE) {
 		clearInterval(self.KEEPALIVE);
