@@ -116,7 +116,7 @@ module.exports.initAPI = function () {
 						//console.log(conid);
 
 						if(cons.includes('' + conid)) {
-							// Stop listening for matrix echoes until this prcedure is finished.
+							// Stop listening for matrix echoes until this procedure is finished.
 							self.listenToEcho = false;
 
 							// Login user at all defined CONs.

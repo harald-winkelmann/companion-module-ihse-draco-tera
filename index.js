@@ -11,6 +11,9 @@ const configFields = require('./src/config.js')
  * Companion instance class for draco tera
  */
 class dracotera extends InstanceBase {
+	COMPANION_IP = '127.0.0.1';
+	COMPANION_PORT = '8000';
+
 	constructor(internal) {
 		super(internal)
 		Object.assign(this, {
@@ -62,10 +65,7 @@ class dracotera extends InstanceBase {
 		
         const body = JSON.parse('{}');
 
-		var companion = '127.0.0.1';
-		//var companion = '192.168.221.35';
-
-		const url = 'http://' + companion + ':8000/api/location/1/0/4/style?text=' + username;
+		const url = 'http://' + this.COMPANION_IP + ':' + this.COMPANION_PORT + '/api/location/1/0/4/style?text=' + username;
         try {
           const response = await axios.post(url, body, {
             headers: {
@@ -78,7 +78,7 @@ class dracotera extends InstanceBase {
         }
 
 
-		const url2 = 'http://' + companion + ':8000/api/location/1/0/5/style?text=' + logout;
+		const url2 = 'http://' + this.COMPANION_IP + ':' + this.COMPANION_PORT + '/api/location/1/0/5/style?text=' + logout;
 		try {
 			const response = await axios.post(url2, body, {
 				headers: {
@@ -93,6 +93,39 @@ class dracotera extends InstanceBase {
 
 	}
 
+	async getVariable(variableId) {
+		// Regular expression for getting custom variable name out of 
+		// allowed variable definition.
+		// The API command below only works for custom variables!
+		var regex = new RegExp("^(\\$\\((internal:custom_)(.*)\\))$");
+		var match  = variableId.match(regex);
+		var id = null;
+		if (match) {
+			id = match[3];
+		}
+
+		if(id) {
+					
+			const body = JSON.parse('{}');
+			const url = 'http://' + this.COMPANION_IP + ':' + this.COMPANION_PORT + '/api/custom-variable/' + id + '/value';
+			try {
+				const response = await axios.get(url, body, {
+					headers: {
+					'accept' : '*/*'
+					}
+				});
+				return response.data;
+				
+			} catch (error) {
+				console.error('Error:', error.message);
+				return null;
+			}	
+		}
+		else {
+			console.log('Error - Invalid variable definition:', variableId)
+			return null;
+		}
+	}
 }
 
 runEntrypoint(dracotera, UpgradeScripts);

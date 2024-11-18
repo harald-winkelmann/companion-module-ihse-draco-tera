@@ -179,7 +179,8 @@ module.exports.initActions = function () {
 				id: 'userid',
 				default: '0',
 				tooltip: 'Enter User ID for user macro or 0 for CON macro',
-				regex: Regex.NUMBER
+				useVariables: true,
+				regex: "/^(\\d+|\\$\\(.*\\))$/"
 			}],
 			callback: async function (action) {
 				self.executeAction(action);
@@ -246,23 +247,33 @@ module.exports.executeAction = function (action) {
 		break;
 
 		case 'exec-macro-at-con':
-			var cmd = Buffer.from([0x1B, 0x5B, 0x6F, 0x0D, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
-			// Write macro id.
-			cmd.writeUInt16LE(parseInt(opt.macro), 5);
 			// Get and write user id.
 			// This is the user where the macro is defined and started.
-			var userid = parseInt(opt.userid);
-			cmd.writeUInt16LE(userid, 7);
-			// Define con byte depending on user id.
-			// This is the CON where the macro is defined and started.
-			if(userid == 0) {
-				cmd.writeUInt16LE(parseInt(opt.conid), 9);
+			var regex = new RegExp("^(\\d*)$");
+			var match = opt.userid.match(regex);
+			if(match) {
+				// Standard behavior.
+				cmd = self.build_exec_macro_at_con(opt.macro, match[1], opt.conid);
+				self.log('debug', 'CMD exec-macro-at-con:  ' + cmd.toString('hex'));
 			}
-			// Write con id at con byte 11 in every case.
-			// This is the CON to be used for PUSH and GET commands.
-			// I call it "context CON".
-			cmd.writeUInt16LE(parseInt(opt.conid), 11);
-			self.log('debug', 'CMD exec-macro-at-con:  ' + cmd.toString('hex'));
+			else {
+				// Async behavior.
+				// We are requesting the user id by asynchronious API call.
+				self.getVariable(opt.userid).then((res) => {
+					if(res) {
+						// Use result of async call to build command.
+						cmd = self.build_exec_macro_at_con(opt.macro, res, opt.conid);
+						self.log('debug', 'CMD exec-macro-at-con:  ' + cmd.toString('hex'));
+
+						// Sending command when async call has finished.
+						self.socket.send(cmd);
+					}
+				});
+
+				// Break standard behavior here, because we have no valid command.
+				return;
+			}
+			
 		break;
 
 		case 'switch-link':
@@ -337,4 +348,31 @@ module.exports.executeAction = function (action) {
             self.socket.send(cmd)
         }
     }
+}
+
+
+module.exports.build_exec_macro_at_con = function (macroId, userid, conid) {
+    var self = this;
+	var cmd = Buffer.from([0x1B, 0x5B, 0x6F, 0x0D, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+	// Write macro id.
+	cmd.writeUInt16LE(parseInt(macroId), 5);
+
+	// User id as int.
+	userid = parseInt(userid)
+
+	// Write user id in every case.
+	cmd.writeUInt16LE(userid, 7);
+
+	// Define con byte depending on user id.
+	// This is the CON where the macro is defined and started.
+	if(userid == 0) {
+		cmd.writeUInt16LE(parseInt(conid), 9);
+	}
+
+	// Write con id at con byte 11 in every case.
+	// This is the CON to be used for PUSH and GET commands.
+	// I call it "context CON".
+	cmd.writeUInt16LE(parseInt(conid), 11);
+
+	return cmd;
 }
