@@ -65,7 +65,7 @@ class dracotera extends InstanceBase {
 		
         const body = JSON.parse('{}');
 
-		const url = 'http://' + this.COMPANION_IP + ':' + this.COMPANION_PORT + '/api/location/1/0/4/style?text=' + username;
+		var url = 'http://' + this.COMPANION_IP + ':' + this.COMPANION_PORT + '/api/location/1/0/4/style?text=' + username;
         try {
           const response = await axios.post(url, body, {
             headers: {
@@ -78,9 +78,9 @@ class dracotera extends InstanceBase {
         }
 
 
-		const url2 = 'http://' + this.COMPANION_IP + ':' + this.COMPANION_PORT + '/api/location/1/0/5/style?text=' + logout;
+		url = 'http://' + this.COMPANION_IP + ':' + this.COMPANION_PORT + '/api/location/1/0/5/style?text=' + logout;
 		try {
-			const response = await axios.post(url2, body, {
+			const response = await axios.post(url, body, {
 				headers: {
 				'accept' : '*/*'
 				}
@@ -89,8 +89,6 @@ class dracotera extends InstanceBase {
 		} catch (error) {
 			console.error('Error:', error.message);
 		}
-
-
 	}
 
 	async getVariable(variableId) {
@@ -104,8 +102,7 @@ class dracotera extends InstanceBase {
 			id = match[3];
 		}
 
-		if(id) {
-					
+		if(id) {					
 			const body = JSON.parse('{}');
 			const url = 'http://' + this.COMPANION_IP + ':' + this.COMPANION_PORT + '/api/custom-variable/' + id + '/value';
 			try {
@@ -119,7 +116,7 @@ class dracotera extends InstanceBase {
 			} catch (error) {
 				console.error('Error:', error.message);
 				return null;
-			}	
+			}
 		}
 		else {
 			console.log('Error - Invalid variable definition:', variableId)
