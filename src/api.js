@@ -78,6 +78,7 @@ module.exports.initAPI = function () {
 		self.socket.on('data', function (data) {
 			var cnt = 1;
 			var console_length = 50;
+			var invalid_bytes = [];
 			while(data.length) {
 
 				// Keep alive echo.
@@ -119,7 +120,12 @@ module.exports.initAPI = function () {
 					//console.log(data);
 					continue;
 				}
-
+				// Invalid echo!
+				invalid_bytes.push(data[0])
+				data = data.slice(1);
+			}
+			if(invalid_bytes.length > 0) {
+				console.log(new Date().toISOString(), 'INVALID'.padEnd(self.console_ident), invalid_bytes);
 			}
 		});
 	}
