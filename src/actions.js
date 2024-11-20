@@ -254,16 +254,14 @@ module.exports.executeAction = function (action) {
 			if(match) {
 				// Standard behavior.
 				cmd = self.build_exec_macro_at_con(opt.macro, match[1], opt.conid);
-				self.log('debug', 'CMD exec-macro-at-con:  ' + cmd.toString('hex'));
 			}
 			else {
 				// Async behavior.
 				// We are requesting the user id by asynchronious API call.
 				self.getVariable(opt.userid).then((res) => {
-					if(res) {
+					if(res != null) {
 						// Use result of async call to build command.
 						cmd = self.build_exec_macro_at_con(opt.macro, res, opt.conid);
-						self.log('debug', 'CMD exec-macro-at-con:  ' + cmd.toString('hex'));
 
 						// Sending command when async call has finished.
 						self.socket.send(cmd);
@@ -325,7 +323,7 @@ module.exports.executeAction = function (action) {
 
 				if (self.socket !== undefined) {
 					// Send command without message.
-					self.log('debug', 'sending ' + cmd.toString('hex'))
+					console.log(cmd);
 					self.socket.send(cmd);
 
 					// Send message and trailing null byte.
@@ -344,7 +342,7 @@ module.exports.executeAction = function (action) {
 
     if (cmd !== undefined) {
         if (self.socket !== undefined) {
-            self.log('debug', 'sending ' + cmd.toString('hex'))
+			console.log(new Date().toISOString(), 'CMD'.padEnd(self.console_ident), cmd);
             self.socket.send(cmd)
         }
     }
@@ -353,6 +351,7 @@ module.exports.executeAction = function (action) {
 
 module.exports.build_exec_macro_at_con = function (macroId, userid, conid) {
     var self = this;
+	var type = 'USER Macro';
 	var cmd = Buffer.from([0x1B, 0x5B, 0x6F, 0x0D, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
 	// Write macro id.
 	cmd.writeUInt16LE(parseInt(macroId), 5);
@@ -366,6 +365,7 @@ module.exports.build_exec_macro_at_con = function (macroId, userid, conid) {
 	// Define con byte depending on user id.
 	// This is the CON where the macro is defined and started.
 	if(userid == 0) {
+		type = 'CON Macro';
 		cmd.writeUInt16LE(parseInt(conid), 9);
 	}
 
@@ -374,5 +374,7 @@ module.exports.build_exec_macro_at_con = function (macroId, userid, conid) {
 	// I call it "context CON".
 	cmd.writeUInt16LE(parseInt(conid), 11);
 
+	self.log('debug', `CMD exec-macro-at-con - ${type}:  ` + cmd.toString('hex'));
+	console.log(`CMD exec-macro-at-con - ${type}:`, cmd);
 	return cmd;
 }

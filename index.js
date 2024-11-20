@@ -11,8 +11,12 @@ const configFields = require('./src/config.js')
  * Companion instance class for draco tera
  */
 class dracotera extends InstanceBase {
-	COMPANION_IP = '127.0.0.1';
-	COMPANION_PORT = '8000';
+	COMPANION_IP 	= '127.0.0.1';
+	COMPANION_PORT 	= '8000';
+	HEADERS 		= {headers: {'accept' : '*/*'}};
+
+	// Identation for some console outputs.
+	console_ident = 5;
 
 	constructor(internal) {
 		super(internal)
@@ -55,40 +59,31 @@ class dracotera extends InstanceBase {
 		}
 	}
 
-	async callApi(userid) {
-		var username = '---';
-		var logout = 'Logged\nout';
-		if(userid > 0) {
-			username = 'User ID\n' + userid;
-			logout = 'Logout\nUser ID\n' + userid;
-		}
+	async setText(text, page, row, column, color, bgcolor, size) {
+		var url = `http://${this.COMPANION_IP}:${this.COMPANION_PORT}/api/location/${page}/${row}/${column}/style`;
+
+		const body = JSON.parse('{}');
 		
-        const body = JSON.parse('{}');
-
-		var url = 'http://' + this.COMPANION_IP + ':' + this.COMPANION_PORT + '/api/location/1/0/4/style?text=' + username;
-        try {
-          const response = await axios.post(url, body, {
-            headers: {
-              'accept' : '*/*'
-            }
-          });
-          console.log('Response:', response.data);
-        } catch (error) {
-          console.error('Error:', error.message);
-        }
-
-
-		url = 'http://' + this.COMPANION_IP + ':' + this.COMPANION_PORT + '/api/location/1/0/5/style?text=' + logout;
-		try {
-			const response = await axios.post(url, body, {
-				headers: {
-				'accept' : '*/*'
-				}
-			});
-			console.log('Response:', response.data);
-		} catch (error) {
-			console.error('Error:', error.message);
+		body["text"] = text;
+		if(color) {
+			body["color"] = color;
 		}
+		if(bgcolor) {
+			body["bgcolor"] = bgcolor;
+		}
+		if(size) {
+			body["size"] = size;
+		}
+
+		this.doApiPostCall(url, body);
+	}
+
+	async doApiPostCall(url, body) {
+        try {
+          	const response = await axios.post(url, body, this.HEADERS);
+        } catch (error) {
+          	console.error('Error:', error.message);
+        }
 	}
 
 	async getVariable(variableId) {
@@ -106,11 +101,7 @@ class dracotera extends InstanceBase {
 			const body = JSON.parse('{}');
 			const url = 'http://' + this.COMPANION_IP + ':' + this.COMPANION_PORT + '/api/custom-variable/' + id + '/value';
 			try {
-				const response = await axios.get(url, body, {
-					headers: {
-					'accept' : '*/*'
-					}
-				});
+				const response = await axios.get(url, body, this.HEADERS);
 				return response.data;
 				
 			} catch (error) {

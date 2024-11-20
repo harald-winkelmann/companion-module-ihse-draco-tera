@@ -82,60 +82,106 @@ module.exports.initAPI = function () {
 		});
 
 		self.socket.on('data', function (data) {
-			// Keep alive echo.
-			if(data[2] == 0x7a) {
-				return;
-			}
-			// Command successful executed.
-			if(data[0] == 0x06) {
-				console.log('OK'); 
-				data = data.slice(1);
-			}
-			// Command error.
-			if(data[0] == 0x15) {
-				console.log('ERROR'); 
-				data = data.slice(1);
-			}
-			// Matrix busy. Command not executed.
-			if(data[0] == 0x07) {
-				console.log('BUSY'); 
-				data = data.slice(1);
-			}
-			// Matrix echo.
-			if(data.length) {
-				console.log('LAN ECHO');
-				console.log(data);
-				if(self.listenToEcho) {
-					// Login user command.
-					if(data[2] == 0x65) {
+			var cnt = 1;
+			var console_length = 50;
+			var invalid_bytes = [];
+			while(data.length) {
 
-						var userid = data.readInt16LE(7);
-						//console.log(userid);
+				// Keep alive echo.
+				if(data[2] == 0x7a) {
+					var telegram_length = data.readInt16LE(3);
+					data = data.slice(telegram_length);
+					continue;
+				}
+				// Command successful executed.
+				if(data[0] == 0x06) {
+					console.log(new Date().toISOString(), 'OK'.padEnd(self.console_ident), data); 
+					data = data.slice(1);
+					continue;
+				}
+				// Command error.
+				if(data[0] == 0x15) {
+					console.log(new Date().toISOString(), 'ERROR'.padEnd(self.console_ident), data); 
+					data = data.slice(1);
+					continue;
+				}
+				// Matrix busy. Command not executed.
+				if(data[0] == 0x07) {
+					console.log(new Date().toISOString(), 'BUSY'.padEnd(self.console_ident), data); 
+					data = data.slice(1);
+					continue;
+				}
+				// Matrix telegram echo.
+				if(data[0] == 0x1B) {
+					if(cnt == 1) {
+						console.log(new Date().toISOString(), 'ECHO'.padEnd(self.console_ident), data);
+					}
+					cnt++;
+					var telegram_length = data.readInt16LE(3);
+					var cmd = data.slice(0, telegram_length);
+					var additional = '';
+					if(telegram_length > console_length) { additional = '... more';}
+					console.log(' '.padEnd(self.console_ident), cmd.slice(0, console_length), additional);
 
-						var conid = data.readInt16LE(5);
-						//console.log(conid);
-
-						if(cons.includes('' + conid)) {
-							// Stop listening for matrix echoes until this procedure is finished.
-							self.listenToEcho = false;
-
-							// Login user at all defined CONs.
-							cons.forEach(conid => {
-								//console.log(conid);
-								var cmd = Buffer.from([0x1B, 0x5B, 0x65, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00]);
-								cmd.writeUInt16LE(parseInt(conid), 5);
-								cmd.writeUInt16LE(parseInt(userid), 7);
-								self.socket.send(cmd);
-							});
-
-							// Re-start listening for matrix echoes again.
-							setTimeout(startListeningToEcho, 500);
-
-							// Update button text by companion API call.
-							self.callApi(userid);
+					// We have to be careful with infinit loops caused by echoes created during the following lines of code.
+					// That's why we are stopping to listen for echoes until this procedure has finished.
+					if(self.listenToEcho) {
+						// Login user command.
+						if(cmd[2] == 0x65) {
+	
+							var userid = cmd.readInt16LE(7);
+							//console.log(userid);
+	
+							var conid = cmd.readInt16LE(5);
+							//console.log(conid);
+	
+							if(cons.includes(conid.toString())) {
+								// Stop listening for matrix echoes until this procedure is finished.
+								self.listenToEcho = false;
+	
+								// Login user at all defined CONs.
+								cons.forEach(conid2 => {
+									if(parseInt(conid2) != conid) {
+										// Login command.
+										var cmd2 = Buffer.from([0x1B, 0x5B, 0x65, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00]);
+										cmd2.writeUInt16LE(parseInt(conid2), 5);
+										cmd2.writeUInt16LE(parseInt(userid), 7);
+										self.socket.send(cmd2);
+									}
+								});
+	
+								// Re-start listening for matrix echoes again.
+								setTimeout(startListeningToEcho, 500);
+	
+								// Update button text by companion API call.
+								var text = `Logged in\nUser ${userid} at\nCON ${conid}`;
+								var color = '#00FF00';
+								var bgcolor = '#000000';
+								var size = 14;
+								if(userid == 0) {
+									text = `Logged out`;
+									color = '#FF0000';
+									bgcolor = '#000000';
+								}
+								self.setText(text, 1, 0, 7, color, bgcolor, size);
+							}
 						}
 					}
+	
+
+					data = data.slice(telegram_length);
+					//console.log(data);
+					continue;
 				}
+				// Invalid echo!
+				invalid_bytes.push(data[0])
+				data = data.slice(1);
+			}
+
+			// Invalid bytes..
+			if(invalid_bytes.length) {
+				console.log('INVALID');
+				console.log(invalid_bytes);
 			}
 		});
 	}
