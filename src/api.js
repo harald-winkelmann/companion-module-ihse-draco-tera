@@ -62,18 +62,16 @@ module.exports.initAPI = function () {
 		self.socket.on('error', function (err) {
 			self.updateStatus(InstanceStatus.ConnectionFailure);			
 			self.log('error',"Network error: " + err.message);
-			var nextIndex = index +1;
-			// Destroy socket and try with next IP address.
-			if(hosts.length == nextIndex) {
-				// Startover again.
-				nextIndex = 0
-			}
-			self.socket.destroy();			
-			self.log('error','socked destroyed');
-			delete self.socket;
-			self.log('error','socked deleted');
+
+			// Cleanup all active tasts and the socket.
+			self.destroy();
 				
+			// New socket.
+			var nextIndex = getNextIndex(index, hosts);
 			startListeningSocket(nextIndex);
+									
+			// Restart keep alive task.
+			self.KEEPALIVE = setInterval(retrySocket, self.KEEPALIVE_TMR);
 		});
 
 		self.socket.on('connect', function () {
@@ -90,6 +88,31 @@ module.exports.initAPI = function () {
 				// Keep alive echo.
 				if(data[2] == 0x7a) {
 					var telegram_length = data.readInt16LE(3);
+
+
+					var cmd = data.slice(0, telegram_length);
+					grid_byte = cmd[6];
+					is_grid_mask = 4;
+					is_master_mask = 8;
+					is_grid = ((grid_byte & is_grid_mask) === is_grid_mask)
+					is_master = ((grid_byte & is_master_mask) === is_master_mask)
+
+					if(is_grid && !is_master) {
+						//console.log('is_grid', is_grid, 'is_master', is_master);
+						self.updateStatus(InstanceStatus.BadConfig);			
+						self.log('error',"Grid error: Connected to sub matrix host " + hosts[index]);
+
+						// Cleanup all active tasts and the socket.
+						self.destroy();
+							
+						// New socket.
+						var nextIndex = getNextIndex(index, hosts);
+						startListeningSocket(nextIndex);	
+												
+						// Restart keep alive task.
+						self.KEEPALIVE = setInterval(retrySocket, self.KEEPALIVE_TMR);
+					}
+
 					data = data.slice(telegram_length);
 					continue;
 				}
@@ -154,16 +177,19 @@ module.exports.initAPI = function () {
 								setTimeout(startListeningToEcho, 500);
 	
 								// Update button text by companion API call.
-								var text = `Logged in\nUser ${userid} at\nCON ${conid}`;
-								var color = '#00FF00';
-								var bgcolor = '#000000';
-								var size = 14;
+								var btn_page 	= 1; // First page is 1
+								var btn_row 	= 0; // First row is 0
+								var btn_col 	= 7; // First column is 1
+								var btn_text 	= `Logged in\nUser ${userid} at\nCON ${conid}`;
+								var btn_color 	= '#00FF00';
+								var btn_bgcolor	= '#000000';
+								var btn_size 	= 14;
 								if(userid == 0) {
-									text = `Logged out`;
-									color = '#FF0000';
-									bgcolor = '#000000';
+									btn_text 	= `Logged out`;
+									btn_color 	= '#FF0000';
+									btn_bgcolor = '#000000';
 								}
-								self.setText(text, 1, 0, 7, color, bgcolor, size);
+								self.setText(btn_text, btn_page, btn_row, btn_col, btn_color, btn_bgcolor, btn_size);
 							}
 						}
 					}
@@ -187,7 +213,7 @@ module.exports.initAPI = function () {
 	}
 
 	// Run keep alive function repeatedly.
-	self.KEEPALIVE = setInterval(retrySocket, 25000);
+	self.KEEPALIVE = setInterval(retrySocket, self.KEEPALIVE_TMR);
 
 	// Run establishing connection immediately once.
 	retrySocket();
@@ -198,6 +224,21 @@ module.exports.initAPI = function () {
 	 */
 	const startListeningToEcho = () => {
 		self.listenToEcho = true;
+	}
+
+	
+	/**
+	 * Increase index by 1 until end of hosts list is reached.
+	 * At the end of hosts list, start over again.
+	 */
+	const getNextIndex = (index, hosts) => {
+		index = index + 1;
+		// Destroy socket and try with next IP address.
+		if(hosts.length <= index) {
+			// Startover again.
+			index = 0
+		}
+		return index
 	}
 
 }

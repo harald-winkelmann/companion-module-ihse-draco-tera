@@ -14,6 +14,7 @@ class dracotera extends InstanceBase {
 	COMPANION_IP 	= '127.0.0.1';
 	COMPANION_PORT 	= '8000';
 	HEADERS 		= {headers: {'accept' : '*/*'}};
+	KEEPALIVE_TMR	= 25000 // Milliseconds
 
 	// Identation for some console outputs.
 	console_ident = 5;
@@ -51,11 +52,14 @@ class dracotera extends InstanceBase {
 		if(this.KEEPALIVE) {
 			clearInterval(this.KEEPALIVE)
 			delete this.KEEPALIVE;
+			this.log('error','keep alive stopped');
 		}
 
 		if (this.socket) {
 			this.socket.destroy();
+			this.log('error','socked destroyed');
 			delete this.socket;
+			this.log('error','socked deleted');
 		}
 	}
 
