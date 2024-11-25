@@ -258,7 +258,7 @@ module.exports.executeAction = function (action) {
 			else {
 				// Async behavior.
 				// We are requesting the user id by asynchronious API call.
-				self.getVariable(opt.userid).then((res) => {
+				self.getCompanionVariable(opt.userid).then((res) => {
 					if(res != null) {
 						// Use result of async call to build command.
 						cmd = self.build_exec_macro_at_con(opt.macro, res, opt.conid);

@@ -189,7 +189,25 @@ module.exports.initAPI = function () {
 									btn_color 	= '#FF0000';
 									btn_bgcolor = '#000000';
 								}
-								self.setText(btn_text, btn_page, btn_row, btn_col, btn_color, btn_bgcolor, btn_size);
+								self.setCompanionText(btn_text, btn_page, btn_row, btn_col, btn_color, btn_bgcolor, btn_size);
+
+								// Update dependant custom variables.
+								// Update user_id.
+								var variableId 		= '$(internal:custom_user_id)';
+								var variableValue 	= userid;
+								self.setCompanionVariable(variableId, variableValue)
+
+								// Update logged in status.
+								variableId 		= '$(internal:custom_ihse_login_status)';
+								variableValue 	= userid > 0 ? 1 : 0;
+								self.setCompanionVariable(variableId, variableValue)
+
+								// Reset nfc tag variable.
+								if(userid == 0) {
+									variableId 		= '$(internal:custom_nfc_tag_id)';
+									variableValue 	= 0;
+									self.setCompanionVariable(variableId, variableValue)
+								}
 							}
 						}
 					}

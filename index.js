@@ -14,7 +14,11 @@ class dracotera extends InstanceBase {
 	COMPANION_IP 	= '127.0.0.1';
 	COMPANION_PORT 	= '8000';
 	HEADERS 		= {headers: {'accept' : '*/*'}};
-	KEEPALIVE_TMR	= 25000 // Milliseconds
+	KEEPALIVE_TMR	= 25000; // Milliseconds
+
+	// Regular expression for getting custom variable name out of 
+	// allowed variable definition.
+	CUSTOM_VAR_REGEX= new RegExp("^(\\$\\((internal:custom_)(.*)\\))$");
 
 	// Identation for some console outputs.
 	console_ident = 5;
@@ -63,7 +67,7 @@ class dracotera extends InstanceBase {
 		}
 	}
 
-	async setText(text, page, row, column, color, bgcolor, size) {
+	async setCompanionText(text, page, row, column, color, bgcolor, size) {
 		var url = `http://${this.COMPANION_IP}:${this.COMPANION_PORT}/api/location/${page}/${row}/${column}/style`;
 
 		const body = JSON.parse('{}');
@@ -79,23 +83,21 @@ class dracotera extends InstanceBase {
 			body["size"] = size;
 		}
 
-		this.doApiPostCall(url, body);
+		this.doCompanionApiPostCall(url, body);
 	}
 
-	async doApiPostCall(url, body) {
+	async doCompanionApiPostCall(url, body) {
         try {
           	const response = await axios.post(url, body, this.HEADERS);
         } catch (error) {
           	console.error('Error:', error.message);
+          	console.error('  URL:', url);
         }
 	}
 
-	async getVariable(variableId) {
-		// Regular expression for getting custom variable name out of 
-		// allowed variable definition.
+	async getCompanionVariable(variableId) {
 		// The API command below only works for custom variables!
-		var regex = new RegExp("^(\\$\\((internal:custom_)(.*)\\))$");
-		var match  = variableId.match(regex);
+		var match  = variableId.match(this.CUSTOM_VAR_REGEX);
 		var id = null;
 		if (match) {
 			id = match[3];
@@ -113,6 +115,24 @@ class dracotera extends InstanceBase {
 				return null;
 			}
 		}
+		else {
+			console.log('Error - Invalid variable definition:', variableId)
+			return null;
+		}
+	}
+
+	async setCompanionVariable(variableId, variableValue) {
+		// The API command below only works for custom variables!
+		var match  = variableId.match(this.CUSTOM_VAR_REGEX);
+		var id = null;
+		if (match) {
+			id = match[3];
+		}
+
+		if(id) {					
+			const body = JSON.parse('{}');
+			const url = 'http://' + this.COMPANION_IP + ':' + this.COMPANION_PORT + '/api/custom-variable/' + id + '/value?value=' + variableValue;
+			this.doCompanionApiPostCall(url, body);		}
 		else {
 			console.log('Error - Invalid variable definition:', variableId)
 			return null;
