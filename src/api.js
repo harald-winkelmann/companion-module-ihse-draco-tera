@@ -195,7 +195,7 @@ module.exports.initAPI = function () {
 
 								// Update dependant custom variables.
 								// Update user_id.
-								var variableId 		= '$(internal:custom_user_id)';
+								var variableId 		= '$(internal:custom_ihse_user_id)';
 								var variableValue 	= userid;
 								self.setCompanionVariable(variableId, variableValue)
 
