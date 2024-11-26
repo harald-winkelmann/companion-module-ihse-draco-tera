@@ -77,6 +77,8 @@ module.exports.initAPI = function () {
 		self.socket.on('connect', function () {
 			self.updateStatus(InstanceStatus.Ok);			
 			self.log('info', 'IHSE draco tera socket connected');
+			// Directly send keep alive signal and check master status.
+			retrySocket();
 		});
 
 		self.socket.on('data', function (data) {
