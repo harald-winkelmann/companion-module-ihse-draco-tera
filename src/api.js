@@ -191,7 +191,7 @@ module.exports.initAPI = function () {
 									btn_color 	= '#FF0000';
 									btn_bgcolor = '#000000';
 								}
-								self.setCompanionText(btn_text, btn_page, btn_row, btn_col, btn_color, btn_bgcolor, btn_size);
+								//self.setCompanionText(btn_text, btn_page, btn_row, btn_col, btn_color, btn_bgcolor, btn_size);
 
 								// Update dependant custom variables.
 								// Update user_id.
