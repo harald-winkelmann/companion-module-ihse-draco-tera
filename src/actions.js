@@ -231,7 +231,30 @@ module.exports.initActions = function () {
 			callback: async function (action) {
 				self.executeAction(action);
 			}
-		}				
+		},				
+
+		'loop-macro': {
+			name: 'Loop macros of CON',
+			options: [{
+				type: 'textinput',
+				label: 'CON',
+				id: 'con',
+				default: '',
+				tooltip: 'Enter CON Number',
+				regex: Regex.NUMBER
+			},{
+				type: 'textinput',
+				label: 'Macros',
+				id: 'macros',
+				default: '',
+				tooltip: 'Enter F keys of macros to execute (comma separated)',
+				useVariables: true,
+				regex: "/^(F([1-9]|1\\d?)(,F([1-9]|1\\d?))*)$/"
+			}],
+			callback: async function (action) {
+				self.executeAction(action);
+			},
+		}	
 	}
 
 	self.setActionDefinitions(actions);
@@ -299,6 +322,11 @@ module.exports.executeAction = function (action) {
 			cmd.writeUInt16LE(parseInt(opt.cpu), 7);
 			cmd.writeUInt16LE(parseInt(opt.con), 9);
 			self.log('debug', 'CMD 0x51:  ' + cmd.toString('hex'));
+		break;
+
+		case 'loop-macro':
+			self.LOOP = setInterval(retrySocket, 2000);
+			self.log('debug', 'CMD loop-macro:  ' + 'xxx');
 		break;
 
 		case 'send-message':
