@@ -18,7 +18,7 @@ module.exports = {
 				default: '192.168.100.99',
 				regex: 
 // Don't change these lines.
-// No idend is allowed here.
+// No ident is allowed here.
 // We splitted the regular expression over several lines to make it easier to understand.
 "\
 /\
